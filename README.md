@@ -2,6 +2,27 @@
 
 Nami 的公开发行仓库，提供安装入口与发布产物。
 
+## Web Docker 镜像
+
+[nami-web Packages](https://github.com/cosnami/nami/pkgs/container/nami-web)
+提供独立前端镜像，支持 Linux AMD64 / ARM64，可以匿名拉取：
+
+```bash
+docker pull ghcr.io/cosnami/nami-web:0.3.2
+docker run --rm --name nami-web -p 127.0.0.1:8080:8080 ghcr.io/cosnami/nami-web:0.3.2
+```
+
+前端容器监听 `8080`。部署时通过同源入口网关，将页面和静态资源转发到前端，
+将 `/api` 和 `/api/*` 转发到 Nami Server，并保留完整请求路径。
+Agent gRPC 继续使用服务端的 Agent 入口。
+
+`0.3.2` 和 `latest` 当前指向同一镜像，包含 SBOM 和构建来源记录。
+需要固定产物时使用版本号或完整摘要：
+
+```text
+ghcr.io/cosnami/nami-web@sha256:d739443ae9894756c6adbfa3dbd22a2f68d4351e58c1f5b0ae2da9c92a3bb5c1
+```
+
 ## 安装 Agent
 
 支持运行 systemd 的 Linux x86_64 / ARM64。以 root 身份执行：
