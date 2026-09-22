@@ -93,6 +93,61 @@ Agent gRPC 继续使用服务端的 Agent 入口。
 ghcr.io/cosnami/nami-web@sha256:d739443ae9894756c6adbfa3dbd22a2f68d4351e58c1f5b0ae2da9c92a3bb5c1
 ```
 
+## Agent Docker 镜像
+
+[nami-agent Packages](https://github.com/cosnami/nami/pkgs/container/nami-agent)
+提供 Agent 镜像，支持 Linux AMD64 / ARM64，可以匿名拉取：
+
+```bash
+docker pull ghcr.io/cosnami/nami-agent:0.3.2
+```
+
+在部署 Agent 的 Linux 主机准备 `/etc/nami-agent/nami.toml`：
+
+```toml
+version = 1
+control_plane_url = "https://nami.example.com"
+server_id = "8bd3eb25-11e0-4df8-ab25-772abe019590"
+
+[agent_credential]
+file = "/etc/nami-agent/credential"
+```
+
+替换控制平面地址和 Server UUID，将管理端签发的 Agent 凭据单独写入
+`/etc/nami-agent/credential`。控制平面地址指向 Agent gRPC 的 HTTPS 源地址；
+仅回环地址允许使用 HTTP。配置目录和文件需对容器用户 `65532:65532` 可读，
+凭据文件不要向其他用户开放。
+
+```bash
+docker run --rm --network none --read-only \
+  --mount type=bind,source=/etc/nami-agent,target=/etc/nami-agent,readonly \
+  ghcr.io/cosnami/nami-agent:0.3.2 check --config /etc/nami-agent/nami.toml
+
+docker run -d --name nami-agent --restart unless-stopped \
+  --network host \
+  --read-only \
+  --cap-drop ALL --cap-add NET_BIND_SERVICE \
+  --ulimit nofile=1048576:1048576 \
+  --mount type=bind,source=/etc/nami-agent,target=/etc/nami-agent,readonly \
+  --mount type=volume,source=nami-agent-data,target=/var/lib/nami-agent \
+  ghcr.io/cosnami/nami-agent:0.3.2
+```
+
+`check` 只校验配置结构，不读取凭据或连接控制平面。
+Linux host 网络用于监听管理端下发的协议端口；ACME HTTP-01 还需要可用且公网可达的
+`80/tcp`。Docker Desktop、Colima 的网络与系统指标以其 Linux 虚拟机环境为准。
+
+`/var/lib/nami-agent` 保存流量待上传记录和证书状态，需要持久化。新命名卷继承镜像
+中的 `65532:65532` 所有者和 `0700` 权限；已有卷或绑定目录应由该用户拥有并可读写。
+使用 `docker logs -f nami-agent` 查看日志，`docker stop nami-agent` 正常退出。
+
+`0.3.2` 和 `latest` 当前指向同一镜像，包含 SBOM 和构建来源记录。
+需要固定产物时使用完整摘要：
+
+```text
+ghcr.io/cosnami/nami-agent@sha256:f51c124a030decba3e1aaf1104c536e361d7c6634638f8ff1d321de21c9f8be0
+```
+
 ## 安装 Agent
 
 支持运行 systemd 的 Linux x86_64 / ARM64。以 root 身份执行：
@@ -134,7 +189,8 @@ journalctl -u nami-agent -f
 - `nami-agent-linux-arm64.zip`
 - `SHA256SUMS`
 
-每个 ZIP 只包含静态链接的 `nami-agent` 可执行文件。Agent 通过二进制分发。
+每个 ZIP 只包含静态链接的 `nami-agent` 可执行文件，供上方的 systemd 安装脚本使用。
+Docker 部署使用 Packages 中的 `nami-agent` 镜像。
 
 构建和发布新版本时，更新安装脚本的默认版本以及本文档中的版本号，并验证
 两种架构的产物与校验和，再发布同名标签。正式发布后的产物不覆盖。
