@@ -2,6 +2,39 @@
 
 Nami 的公开发行仓库，提供安装入口与发布产物。
 
+## Nami Docker 镜像（内嵌 Web）
+
+[nami Packages](https://github.com/cosnami/nami/pkgs/container/nami)
+提供内嵌前端的服务端镜像，支持 Linux AMD64 / ARM64，可以匿名拉取：
+
+```bash
+docker pull ghcr.io/cosnami/nami:0.3.2
+```
+
+单个 Rust 进程提供页面、静态资源、HTTP API 和 Agent gRPC，共用 `4433` 端口。
+前端以 SPA 方式运行，资源编入二进制。配置要求与下方的
+[Server 镜像](#server-docker-镜像) 相同，使用 `/etc/nami/config.toml`。
+
+下面假设 PostgreSQL、Redis 已在 Docker 网络 `nami` 中就绪，当前目录有已配置完成的
+`config.toml`。程序启动会自动执行数据库迁移；连接已有数据库前先完成备份。
+
+```bash
+docker run -d --name nami --restart unless-stopped \
+  --network nami \
+  --read-only \
+  --mount type=bind,source="$(pwd)/config.toml",target=/etc/nami/config.toml,readonly \
+  -p 127.0.0.1:4433:4433 \
+  ghcr.io/cosnami/nami:0.3.2
+```
+
+打开 `http://127.0.0.1:4433/` 访问前端，健康检查为 `/api/health`。
+`0.3.2` 和 `latest` 当前指向同一镜像，包含 SBOM 和构建来源记录。
+需要固定产物时使用完整摘要：
+
+```text
+ghcr.io/cosnami/nami@sha256:0c93f3149e72e1b14a9b27743735c62e55b92b3971e3f0794b426379df415f09
+```
+
 ## Server Docker 镜像
 
 [nami-server Packages](https://github.com/cosnami/nami/pkgs/container/nami-server)
