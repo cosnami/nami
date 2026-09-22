@@ -2,6 +2,49 @@
 
 Nami 的公开发行仓库，提供安装入口与发布产物。
 
+## Release 安装包
+
+| 组件 | 产物 | 当前版本 |
+| --- | --- | --- |
+| `nami` | 内嵌 Web 的 Linux 静态二进制，x86_64 / ARM64 | [nami-v0.3.2](https://github.com/cosnami/nami/releases/tag/nami-v0.3.2) |
+| `nami-server` | 纯服务端 Linux 静态二进制，x86_64 / ARM64 | [server-v0.3.2](https://github.com/cosnami/nami/releases/tag/server-v0.3.2) |
+| `nami-web` | 与 CPU 架构无关的 Web 静态文件包 | [web-v0.3.2](https://github.com/cosnami/nami/releases/tag/web-v0.3.2) |
+
+每个 Release 提供 ZIP、`SHA256SUMS` 和 `release-manifest.json`。清单记录来源镜像
+的固定摘要、源码提交以及产物校验和；版本发布后不覆盖附件。
+
+`nami-linux-<架构>.zip`、`nami-server-linux-<架构>.zip` 分别包含 `nami`、
+`nami-server` 可执行文件和 `config.example.toml`。解压后复制示例为 `config.toml`，
+填写 PostgreSQL、Redis 连接、唯一的 Accounts 密钥及管理员邮箱、密码，再启动：
+
+```bash
+./nami --config config.toml
+# 或使用纯服务端：
+./nami-server --config config.toml
+```
+
+系统需要可用的 CA 证书。程序启动会自动执行数据库迁移，连接已有数据库前先备份。
+内嵌版本启动后访问配置的监听地址即可打开前端。
+
+`nami-web-static.zip` 仅包含 `index.html`、JS、CSS、字体和公共资源，可交给静态
+服务器托管，无需 Bun 或 Node。页面导航需要回退到 `index.html`，缺失的静态资源
+返回 404；同源 `/api` 和 `/api/*` 转发到 Nami Server 并保留完整路径。
+Agent gRPC 继续使用服务端的 Agent 入口。
+
+### 制作 Release 安装包
+
+维护者使用 Docker / Buildx、Python 3.11+ 和 `file`，从已验证的公开镜像导出产物：
+
+```bash
+python3 scripts/package-release.py nami 0.3.2
+python3 scripts/package-release.py nami-server 0.3.2
+python3 scripts/package-release.py nami-web 0.3.2
+```
+
+脚本先将版本标签解析为固定镜像摘要，再提取并检查两个架构的产物。
+Web 两种架构的静态文件必须完全一致，才会生成一个通用 ZIP。
+结果写入 `releases/<组件标签>/`；已有目录会拒绝覆盖。
+
 ## Nami Docker 镜像（内嵌 Web）
 
 [nami Packages](https://github.com/cosnami/nami/pkgs/container/nami)

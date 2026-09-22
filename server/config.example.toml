@@ -1,0 +1,26 @@
+[server]
+listen = "127.0.0.1:4433"
+
+[log]
+level = "info"
+
+[database]
+host = "127.0.0.1"
+port = 5432
+name = "nami"
+username = "nami"
+password = "REPLACE_WITH_DATABASE_PASSWORD"
+
+[cache]
+host = "127.0.0.1"
+port = 6379
+password = "REPLACE_WITH_REDIS_PASSWORD"
+
+[accounts]
+# Generate once: python3 -c 'import secrets; print(secrets.token_urlsafe(32))'
+# Keep this key across upgrades; changing it invalidates encrypted secrets and JWTs.
+secret_key = "REPLACE_WITH_UNIQUE_32_BYTE_BASE64URL_KEY"
+
+[admin]
+email = "admin@example.com"
+password = "REPLACE_WITH_ADMIN_PASSWORD"
