@@ -15,7 +15,7 @@ Install or upgrade Nami Agent on Linux with systemd (x86_64 or ARM64).
 Releases default to cosnami/nami and must include
 nami-agent-linux-{x86_64,arm64}.zip and SHA256SUMS.
 An omitted version installs the Agent release pinned by this script.
-Use an explicit Agent tag, for example --version agent-v0.3.2.
+Use an explicit Agent tag, for example --version agent-v0.3.3.
 
 First installation prompts for the control-plane URL, server UUID and credential.
 For unattended installation, set NAMI_CONTROL_PLANE_URL, NAMI_SERVER_ID and
@@ -32,7 +32,7 @@ EOF
 
 main() {
   repository=${NAMI_REPOSITORY:-cosnami/nami}
-  version=agent-v0.3.2
+  version=agent-v0.3.3
   credential=${NAMI_AGENT_CREDENTIAL:-}
   unset NAMI_AGENT_CREDENTIAL
   while (($#)); do

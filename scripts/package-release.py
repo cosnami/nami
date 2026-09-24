@@ -46,14 +46,14 @@ def archive(directory, destination, executable=None):
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("component", choices=("nami", "nami-server", "nami-web"))
+    parser.add_argument("component", choices=("nami", "nami-server", "nami-web", "nami-agent"))
     parser.add_argument("version")
     args = parser.parse_args()
     if not re.fullmatch(r"\d+\.\d+\.\d+(?:-[0-9A-Za-z][0-9A-Za-z.-]*)?", args.version):
         parser.error("version must be a Docker-compatible semantic version, for example 0.3.2")
 
     root = pathlib.Path(__file__).resolve().parent.parent
-    prefix = {"nami": "nami", "nami-server": "server", "nami-web": "web"}[args.component]
+    prefix = {"nami": "nami", "nami-server": "server", "nami-web": "web", "nami-agent": "agent"}[args.component]
     tag = f"{prefix}-v{args.version}"
     destination = root / "releases" / tag
     destination.parent.mkdir(exist_ok=True)
@@ -94,7 +94,8 @@ def main():
                 if args.component == "nami-web":
                     subprocess.run(["docker", "cp", f"{container}:/app/.output/public/.", str(package)], check=True)
                 else:
-                    subprocess.run(["docker", "cp", f"{container}:/usr/local/bin/nami-server", str(package / args.component)], check=True)
+                    binary_name = "nami-agent" if args.component == "nami-agent" else "nami-server"
+                    subprocess.run(["docker", "cp", f"{container}:/usr/local/bin/{binary_name}", str(package / args.component)], check=True)
             finally:
                 subprocess.run(["docker", "rm", container], check=True, stdout=subprocess.DEVNULL)
 
@@ -114,7 +115,8 @@ def main():
                 if "ELF" not in description or expected not in description or "statically linked" not in description:
                     raise ValueError(f"unexpected binary: {description}")
                 record["binary_sha256"] = sha256(binary)
-                shutil.copyfile(root / "server/config.example.toml", package / "config.example.toml")
+                if args.component != "nami-agent":
+                    shutil.copyfile(root / "server/config.example.toml", package / "config.example.toml")
                 archive(package, output / f"{args.component}-linux-{suffix}.zip", args.component)
             manifest["platforms"].append(record)
 
